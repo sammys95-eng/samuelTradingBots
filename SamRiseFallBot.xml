@@ -1,0 +1,89 @@
+<bot>
+  <variables>
+    <variable name="Stake" type="number">1</variable>
+    <variable name="LossCount" type="number">0</variable>
+    <variable name="TotalProfit" type="number">0</variable>
+    <variable name="TotalLoss" type="number">0</variable>
+    <variable name="Direction" type="string">none</variable>
+    <variable name="RSI3" type="number">0</variable>
+    <variable name="RSI10" type="number">0</variable>
+    <variable name="SMA5" type="number">0</variable>
+    <variable name="SMA12" type="number">0</variable>
+    <variable name="SMA40" type="number">0</variable>
+    <variable name="SMA50" type="number">0</variable>
+  </variables>
+
+  <trade_parameters>
+    <market>Volatility 10 Index</market>
+    <contracttype>Both</contracttype>
+    <candleinterval>1</candleinterval>
+    <duration unit="t">5</duration>
+    <stake>Stake</stake>
+  </trade_parameters>
+
+  <run_once>
+    <set name="LossCount">0</set>
+    <set name="TotalProfit">0</set>
+    <set name="TotalLoss">0</set>
+  </run_once>
+
+  <trade_options>
+    <set name="SMA5">SMA(5)</set>
+    <set name="SMA12">SMA(12)</set>
+    <set name="SMA40">SMA(40)</set>
+    <set name="SMA50">SMA(50)</set>
+    <set name="RSI3">RSI(3)</set>
+    <set name="RSI10">RSI(10)</set>
+
+    <if condition="SMA40 &gt; SMA50 AND SMA5 &gt; SMA12 AND RSI3 &gt; RSI10 AND RSI3 &lt; 85">
+      <set name="Direction">rise</set>
+    </if>
+    <else-if condition="RSI3 &gt; 85">
+      <set name="Direction">fall</set>
+    </else-if>
+    <else-if condition="RSI3 &lt; 15">
+      <set name="Direction">rise</set>
+    </else-if>
+    <else>
+      <set name="Direction">none</set>
+    </else>
+
+    <print message="SMA5: ${SMA5}, SMA12: ${SMA12}, RSI3: ${RSI3}, RSI10: ${RSI10}, Direction: ${Direction}" />
+  </trade_options>
+
+  <purchase_conditions>
+    <if condition="Direction = 'rise'">
+      <purchase contract="rise" stake="Stake" duration="5" />
+    </if>
+
+    <if condition="Direction = 'fall'">
+      <purchase contract="fall" stake="Stake" duration="5" />
+    </if>
+  </purchase_conditions>
+
+  <restart_conditions>
+    <if condition="Result = 'loss'">
+      <increment name="LossCount" />
+      <set name="TotalLoss">TotalLoss + Stake</set>
+    </if>
+    <else-if condition="Result = 'win'">
+      <set name="LossCount">0</set>
+      <set name="TotalProfit">TotalProfit + Stake</set>
+    </else-if>
+
+    <print message="Result: ${Result}, LossCount: ${LossCount}, TotalProfit: ${TotalProfit}, TotalLoss: ${TotalLoss}" />
+
+    <if condition="LossCount &gt;= 3">
+      <pause duration="600" />
+    </if>
+    <else-if condition="TotalLoss &gt;= 50">
+      <stop />
+    </else-if>
+    <else-if condition="TotalProfit &gt;= 10">
+      <stop />
+    </else-if>
+    <else>
+      <restart />
+    </else>
+  </restart_conditions>
+</bot>
